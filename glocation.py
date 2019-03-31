@@ -30,6 +30,8 @@ def read_points():
     activity_list = []  # List of items in data with 'activity' details
     drive_session = False
     total_drive = 0.0
+    session_drive = 0.0
+    in_vehicle = 'IN_VEHICLE'
 
     with open('location_history.json') as f:
         data = json.load(f)
@@ -49,59 +51,57 @@ def read_points():
             data_activity += 1
             activity_list.append(point_list)
 
+    '''
+    Enumerate the activity_list and then compare the previous and current row.
+    If the activity value changes from something to IN_VEHICLE then start driving session and start adding up the
+    total distance driven during the session to session_drive variable.
+    
+    When activity type changes from IN_VEHICLE to something else, stop the driving session and reset the total drive. 
+    '''
     for index, item in enumerate(activity_list):
-        print('-' * 169)
+        #print('-' * 169)
 
         if index > 0:
 
-            print(f'Previous line: {activity_list[index - 1]}')
-            print(f'Activity type: {activity_list[index - 1][3][0]["type"]}')
-            prev_coords = (activity_list[index - 1][1], activity_list[index - 1][2])
-            current_coords = (activity_list[index][1], activity_list[index][2])
-            distance = round(geodesic(prev_coords, current_coords).km, 2)
-            #print(f'\nPrevious latitude: {activity_list[index - 1][1]}')
-            #print(f'Previous longitude: {activity_list[index - 1][2]}')
-            #print(f'\nPrevious coordinates: {prev_coords}')
-            #print(f'Current coordinates: {current_coords}')
-            print(f'Distance moved: {distance} km')
+            #print(f'Previous row: {activity_list[index - 1]}')
+            #print(f'Activity type: {activity_list[index - 1][3][0]["type"]}')
+            #prev_coords = (activity_list[index - 1][1], activity_list[index - 1][2])
+            #current_coords = (activity_list[index][1], activity_list[index][2])
+            #distance = round(geodesic(prev_coords, current_coords).km, 2)
+            #print(f'Distance moved: {distance} km')
 
-            if (activity_list[index - 1][3][0]["type"] != 'IN_VEHICLE') and (activity_list[index][3][0]["type"] == 'IN_VEHICLE'):
+            if (activity_list[index - 1][3][0]["type"] != in_vehicle) and (activity_list[index][3][0]["type"] == in_vehicle):
                 drive_session = True
-                print('Driving session has started')
+                print(f'\nPrevious row: {activity_list[index-1]}')
+                print(f'Current row: {activity_list[index]}')
+                print('Driving session has started\n')
 
-            if (activity_list[index - 1][3][0]["type"] == 'IN_VEHICLE') and (activity_list[index][3][0]["type"] != 'IN_VEHICLE'):
+            if (activity_list[index - 1][3][0]["type"] == in_vehicle) and (activity_list[index][3][0]["type"] != in_vehicle):
                 drive_session = False
-                print('Driving session has ended')
+                print(f'\nPrevious row: {activity_list[index - 1]}')
+                print(f'Current row: {activity_list[index]}')
+                print('Driving session has ended\n')
 
 
-            #print(f'\nCurrent latitude: {activity_list[index][1]}')
-            #print(f'Current longitude: {activity_list[index][2]}')
+        #print(f'Activity type: {activity_list[index][3][0]["type"]}')
 
-        print(f'\nCurrent row{activity_list[index]}')
-        print(f'Activity type: {activity_list[index][3][0]["type"]}')
 
         if drive_session:
             prev_coords = (activity_list[index - 1][1], activity_list[index - 1][2])
             current_coords = (activity_list[index][1], activity_list[index][2])
-            distance = round(geodesic(prev_coords, current_coords).km, 2)
-            total_drive += distance
-
-            print(f'Total drive currently: {total_drive} km')
+            distance = geodesic(prev_coords, current_coords).km
+            session_drive += distance
+            session_drive = round(session_drive,2)
+            print(f'Total drive currently: {session_drive} km')
 
         if not drive_session:
-            total_drive = 0.0
+            session_drive = 0.0
 
-
-
-        if index < (len(activity_list) - 1):
-            print(f'\nNext row: {activity_list[index + 1]}')
-        print('-' * 169 + '\n')
+        #if index < (len(activity_list) - 1):
+        #   print(f'\nNext row: {activity_list[index + 1]}')
+        #print('-' * 169 + '\n')
 
     print(f'Total data points: {data_total}')
     print(f'Data points including activity: {data_activity}')
 
-
-
-points = yield_points()
-point1 = next(points)
 read_points()

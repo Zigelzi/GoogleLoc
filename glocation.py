@@ -1,22 +1,6 @@
 import json
 from datetime import datetime
-from collections import namedtuple
 from geopy.distance import geodesic
-
-Point = namedtuple('Point', 'latitude, longitude, datetime, activity')
-
-
-def yield_points():
-    with open('location_history.json') as f:
-        data = json.load(f)
-
-    for point in data['locations']:
-        yield Point(
-            point['latitudeE7'] / 10 ** 7,
-            point['longitudeE7'] / 10 ** 7,
-            datetime.fromtimestamp(int(point['timestampMs']) / 1000),
-            point['activity'][0]['activity']
-        )
 
 '''
 Get the Google Location history JSON dump and read its contents. Then parse the rows and add data point to point_list
@@ -59,41 +43,36 @@ def read_points():
     When activity type changes from IN_VEHICLE to something else, stop the driving session and reset the total drive. 
     '''
     for index, item in enumerate(activity_list):
-        #print('-' * 169)
-
+        # Check that there's previous row to compare to
         if index > 0:
-
-            #print(f'Previous row: {activity_list[index - 1]}')
-            #print(f'Activity type: {activity_list[index - 1][3][0]["type"]}')
-            #prev_coords = (activity_list[index - 1][1], activity_list[index - 1][2])
-            #current_coords = (activity_list[index][1], activity_list[index][2])
-            #distance = round(geodesic(prev_coords, current_coords).km, 2)
-            #print(f'Distance moved: {distance} km')
-
+            # Check if previous activity type is not IN_VEHICLE and that current activity type is IN_VEHCILE
+            # Then set the drive_session to status TRUE to represent ongoing session
             if (activity_list[index - 1][3][0]["type"] != in_vehicle) and (activity_list[index][3][0]["type"] == in_vehicle):
                 drive_session = True
                 print(f'\nPrevious row: {activity_list[index-1]}')
                 print(f'Current row: {activity_list[index]}')
                 print('Driving session has started\n')
 
+            # Check that previous activity type is IN_VEHICLE and that next activity type isn't IN_VEHICLE
+            # Then set the status of drive_session back to FALSE to represent ended drive session
             if (activity_list[index - 1][3][0]["type"] == in_vehicle) and (activity_list[index][3][0]["type"] != in_vehicle):
                 drive_session = False
                 print(f'\nPrevious row: {activity_list[index - 1]}')
                 print(f'Current row: {activity_list[index]}')
                 print('Driving session has ended\n')
 
-
-        #print(f'Activity type: {activity_list[index][3][0]["type"]}')
-
-
+        # If the drive_session is ongoing (TRUE), then calculate distance between previous and current row coordinates
+        # Add that value to total session_drive value and print them out
+        # TODO: Calculation is missing adding the last row when the driving status changes (TRUE -> FALSE)
         if drive_session:
             prev_coords = (activity_list[index - 1][1], activity_list[index - 1][2])
             current_coords = (activity_list[index][1], activity_list[index][2])
-            distance = geodesic(prev_coords, current_coords).km
+            distance = round(geodesic(prev_coords, current_coords).km,2)
             session_drive += distance
             session_drive = round(session_drive,2)
-            print(f'Total drive currently: {session_drive} km')
+            print(f'Total drive currently: {session_drive} km and current drive {distance}')
 
+        # When drive_session ends (FALSE) reset the session total amount
         if not drive_session:
             session_drive = 0.0
 

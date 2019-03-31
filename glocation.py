@@ -15,6 +15,8 @@ def read_points():
     drive_session = False
     total_drive = 0.0
     session_drive = 0.0
+    ev_consumption = 0.18
+    max_drives = []
     in_vehicle = 'IN_VEHICLE'
 
     with open('location_history.json') as f:
@@ -69,8 +71,12 @@ def read_points():
             current_coords = (activity_list[index][1], activity_list[index][2])
             distance = round(geodesic(prev_coords, current_coords).km,2)
             session_drive += distance
-            session_drive = round(session_drive,2)
-            print(f'Total drive currently: {session_drive} km and current drive {distance}')
+            session_drive = round(session_drive, 2)
+            total_drive += session_drive
+            energy = round(session_drive * ev_consumption, 2)
+            if session_drive > 100.0:
+                max_drives.append(activity_list[index])
+            print(f'Total drive currently: {session_drive} km | Current drive {distance} km | Energy used: {energy} kWh')
 
         # When drive_session ends (FALSE) reset the session total amount
         if not drive_session:
@@ -80,7 +86,9 @@ def read_points():
         #   print(f'\nNext row: {activity_list[index + 1]}')
         #print('-' * 169 + '\n')
 
+    print(f'Total driven distance: {total_drive} km')
     print(f'Total data points: {data_total}')
     print(f'Data points including activity: {data_activity}')
+    #print(max_drives)
 
 read_points()

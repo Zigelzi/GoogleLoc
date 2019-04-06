@@ -70,15 +70,18 @@ def read_points():
         if drive_session:
             prev_coords = (activity_list[index - 1]['lat'], activity_list[index - 1]['long'])
             current_coords = (activity_list[index]['lat'], activity_list[index]['long'])
-            distance = round(geodesic(prev_coords, current_coords).km,2)
-            #(prev_coords, current_coords, distance)
+            travel_time = activity_list[index]['datetime'] - activity_list[index - 1]['datetime']
+            distance = round(geodesic(prev_coords, current_coords).km, 2)
+            speed = round(distance / (travel_time.total_seconds() / 3600), 2)
             session_drive += distance
             session_drive = round(session_drive, 2)
             total_drive += session_drive
             energy = round(session_drive * ev_consumption, 2)
             if session_drive > 100.0:
                 max_drives.append(activity_list[index])
-            print(f'Total drive currently: {session_drive} km | Current drive {distance} km | Energy used: {energy} kWh')
+            print(f'''Total drive currently: {session_drive} km | Current drive {distance} km |
+                    Energy used: {energy} kWh | Travel time: {travel_time} | Speed: {speed}''')
+
 
         # When drive_session ends (FALSE) reset the session total amount
         if not drive_session:

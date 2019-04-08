@@ -17,10 +17,13 @@ def read_points():
     session_drive = 0.0
     ev_consumption = 0.18
     speed_list = []
+    high_speeds = []
+    high_speed_counter = 0
     max_drives = []
+    max_drive_counter = 0
     in_vehicle = 'IN_VEHICLE'
 
-    with open('location_history_small.json') as f:
+    with open('location_history.json') as f:
         data = json.load(f)
 
     '''
@@ -66,6 +69,9 @@ def read_points():
                 if speed_list:
                     speed_avg = round(sum(speed_list) / len(speed_list), 2)
                     print(f'Average speed of the session is {speed_avg} km/h')
+                    if speed_avg > 150:
+                        high_speed_counter += 1
+                        high_speeds.append(activity_list[index])
                 print('Driving session has ended\n')
 
         # If the drive_session is ongoing (TRUE), then calculate distance between previous and current row coordinates
@@ -87,6 +93,7 @@ def read_points():
             energy = round(session_drive * ev_consumption, 2)
             if session_drive > 100.0:
                 max_drives.append(activity_list[index])
+                max_drive_counter += 1
             print(f'Total drive currently: {session_drive} km | Current drive {distance} km | Energy used: {energy} kWh | Travel time: {travel_time} | Speed: {speed} km/h')
 
         # When drive_session ends (FALSE) reset the session total amount
@@ -102,6 +109,8 @@ def read_points():
     print(f'Total driven distance: {total_drive} km')
     print(f'Total data points: {data_total}')
     print(f'Data points including activity: {data_activity}')
+    print(f'Travel distances driven for over 100 km: {max_drive_counter}')
+    print(f'Travel sessions with average speed over 150 km/h: {high_speed_counter}')
     #print(max_drives)
 
 read_points()

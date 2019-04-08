@@ -16,6 +16,7 @@ def read_points():
     total_drive = 0.0
     session_drive = 0.0
     ev_consumption = 0.18
+    speed_list = []
     max_drives = []
     in_vehicle = 'IN_VEHICLE'
 
@@ -62,30 +63,37 @@ def read_points():
                 drive_session = False
                 print(f'\nPrevious row: {activity_list[index - 1]}')
                 print(f'Current row: {activity_list[index]}')
+                if speed_list:
+                    speed_avg = round(sum(speed_list) / len(speed_list), 2)
+                    print(f'Average speed of the session is {speed_avg} km/h')
                 print('Driving session has ended\n')
 
         # If the drive_session is ongoing (TRUE), then calculate distance between previous and current row coordinates
         # Add that value to total session_drive value and print them out
         # TODO: Calculation is missing adding the last row when the driving status changes (TRUE -> FALSE)
         if drive_session:
+            # Take previous and current coordinates
             prev_coords = (activity_list[index - 1]['lat'], activity_list[index - 1]['long'])
             current_coords = (activity_list[index]['lat'], activity_list[index]['long'])
+
+            # Take dates from current and previous row and calculate the difference
             travel_time = activity_list[index]['datetime'] - activity_list[index - 1]['datetime']
             distance = round(geodesic(prev_coords, current_coords).km, 2)
             speed = round(distance / (travel_time.total_seconds() / 3600), 2)
+            speed_list.append(speed)
             session_drive += distance
             session_drive = round(session_drive, 2)
             total_drive += session_drive
             energy = round(session_drive * ev_consumption, 2)
             if session_drive > 100.0:
                 max_drives.append(activity_list[index])
-            print(f'''Total drive currently: {session_drive} km | Current drive {distance} km |
-                    Energy used: {energy} kWh | Travel time: {travel_time} | Speed: {speed}''')
-
+            print(f'Total drive currently: {session_drive} km | Current drive {distance} km | Energy used: {energy} kWh | Travel time: {travel_time} | Speed: {speed} km/h')
 
         # When drive_session ends (FALSE) reset the session total amount
         if not drive_session:
             session_drive = 0.0
+
+            speed_list = []
 
         #if index < (len(activity_list) - 1):
         #   print(f'\nNext row: {activity_list[index + 1]}')

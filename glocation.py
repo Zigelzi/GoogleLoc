@@ -8,6 +8,8 @@ if it contains the 'activity' information.
 
 Activity information is used to determine when user is driving with car and that drive is used to analyze distances
 '''
+
+
 def read_points():
     data_total = 0  # Total amount of data points in the log
     data_activity = 0  # Amount of data points containing 'activity' details
@@ -23,7 +25,7 @@ def read_points():
     max_drive_counter = 0
     in_vehicle = 'IN_VEHICLE'
 
-    with open('location_history.json') as f:
+    with open('location_history_small.json') as f:
         data = json.load(f)
 
     '''
@@ -53,7 +55,8 @@ def read_points():
         if index > 0:
             # Check if previous activity type is not IN_VEHICLE and that current activity type is IN_VEHCILE
             # Then set the drive_session to status TRUE to represent ongoing session
-            if (activity_list[index - 1]['activity'][0]["type"] != in_vehicle) and (activity_list[index]['activity'][0]["type"] == in_vehicle):
+            if (activity_list[index - 1]['activity'][0]["type"] != in_vehicle) \
+                    and (activity_list[index]['activity'][0]["type"] == in_vehicle):
                 drive_session = True
                 print(f'\nPrevious row: {activity_list[index-1]}')
                 print(f'Current row: {activity_list[index]}')
@@ -61,9 +64,27 @@ def read_points():
 
             # Check that previous activity type is IN_VEHICLE and that next activity type isn't IN_VEHICLE
             # Then set the status of drive_session back to FALSE to represent ended drive session
-            if (activity_list[index - 1]['activity'][0]["type"] == in_vehicle) and \
-                    (activity_list[index]['activity'][0]["type"] != in_vehicle):
+            if (activity_list[index - 1]['activity'][0]["type"] == in_vehicle) \
+                    and (activity_list[index]['activity'][0]["type"] != in_vehicle):
                 drive_session = False
+
+                # Take previous and current coordinates
+                prev_coords = (activity_list[index - 1]['lat'], activity_list[index - 1]['long'])
+                current_coords = (activity_list[index]['lat'], activity_list[index]['long'])
+
+                # Take dates from current and previous row and calculate the difference
+                travel_time = activity_list[index]['datetime'] - activity_list[index - 1]['datetime']
+                distance = round(geodesic(prev_coords, current_coords).km, 2)
+                speed = round(distance / (travel_time.total_seconds() / 3600), 2)
+                speed_list.append(speed)
+                session_drive += distance
+                session_drive = round(session_drive, 2)
+                total_drive += session_drive
+                energy = round(session_drive * ev_consumption, 2)
+                if session_drive > 100.0:
+                    max_drives.append(activity_list[index])
+                    max_drive_counter += 1
+
                 print(f'\nPrevious row: {activity_list[index - 1]}')
                 print(f'Current row: {activity_list[index]}')
                 if speed_list:
@@ -72,6 +93,7 @@ def read_points():
                     if speed_avg > 150:
                         high_speed_counter += 1
                         high_speeds.append(activity_list[index])
+                print(f'Total drive currently: {session_drive} km | Current drive {distance} km | Energy used: {energy} kWh | Travel time: {travel_time} | Speed: {speed} km/h')
                 print('Driving session has ended\n')
 
         # If the drive_session is ongoing (TRUE), then calculate distance between previous and current row coordinates

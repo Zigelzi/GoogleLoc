@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from geopy.distance import geodesic
-from matplotlib import pyplot, dates
+from matplotlib import pyplot as plt
 
 
 def read_points():
